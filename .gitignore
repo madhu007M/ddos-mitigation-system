@@ -1,0 +1,30 @@
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+
+# Directory for instrumented libs
+lib-cov/
+
+# npm
+node_modules/
+package-lock.json
+
+# Optional npm cache directory
+.npm/
+
+# SASS
+.sass-cache/
+
+# Next.js
+.next/
+
+# Nuxt.js
+.dist/
+
+# Gatsby files
+.cache/
+public/
