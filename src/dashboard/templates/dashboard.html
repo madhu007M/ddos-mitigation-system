@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DDoS Mitigation Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .alert-item {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .alert-item.critical {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .alert-item.high {
+            background: #ffe5e5;
+            border-left-color: #ff6b6b;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .alert-details {
+            font-size: 14px;
+            color: #333;
+        }
+
+        .ip-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .ip-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .control-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background: #28a745;
+        }
+
+        .status-warning {
+            background: #ffc107;
+        }
+
+        .status-danger {
+            background: #dc3545;
+        }
+
+        #refresh-indicator {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ DDoS Mitigation Dashboard</h1>
+            <p class="subtitle">Real-time monitoring and protection system <span id="refresh-indicator">●</span></p>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- System Stats -->
+            <div class="card">
+                <h2>System Overview</h2>
+                <div class="stat-box">
+                    <div class="stat-label">Total Requests Tracked</div>
+                    <div class="stat-value" id="total-requests">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Active IPs</div>
+                    <div class="stat-value" id="active-ips">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Blocked IPs</div>
+                    <div class="stat-value" id="blocked-ips">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Suspicious IPs</div>
+                    <div class="stat-value" id="suspicious-ips">-</div>
+                </div>
+            </div>
+
+            <!-- Rate Limiter Stats -->
+            <div class="card">
+                <h2>Rate Limiter</h2>
+                <div class="stat-box">
+                    <div class="stat-label">Max Requests / Window</div>
+                    <div class="stat-value" id="max-requests">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Time Window (seconds)</div>
+                    <div class="stat-value" id="time-window">-</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Currently Blocked</div>
+                    <div class="stat-value" id="rate-blocked">-</div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="card">
+                <h2>Recent Alerts</h2>
+                <div id="alerts-container" class="loading">
+                    Loading alerts...
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Blocked IPs -->
+            <div class="card">
+                <h2>Blocked IPs</h2>
+                <div id="blocked-ips-list" class="ip-list loading">
+                    Loading...
+                </div>
+            </div>
+
+            <!-- Suspicious IPs -->
+            <div class="card">
+                <h2>Suspicious Activity</h2>
+                <div id="suspicious-ips-list" class="ip-list loading">
+                    Loading...
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="card">
+                <h2>IP Management</h2>
+                <div class="control-section">
+                    <div class="form-group">
+                        <label>IP Address</label>
+                        <input type="text" id="control-ip" placeholder="Enter IP address">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (seconds, optional)</label>
+                        <input type="number" id="control-duration" placeholder="Leave empty for default">
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-danger" onclick="blockIP()">Block IP</button>
+                        <button class="btn btn-success" onclick="unblockIP()">Unblock IP</button>
+                        <button class="btn" onclick="whitelistIP()">Whitelist IP</button>
+                    </div>
+                </div>
+                <div class="control-section">
+                    <h3 style="margin-bottom: 10px;">Test Request</h3>
+                    <div class="form-group">
+                        <label>Test IP</label>
+                        <input type="text" id="test-ip" placeholder="Enter IP to test">
+                    </div>
+                    <button class="btn" onclick="testRequest()">Send Test Request</button>
+                    <div id="test-result" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let refreshInterval;
+
+        // Fetch and update dashboard data
+        async function updateDashboard() {
+            try {
+                const response = await fetch('/api/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const data = result.data;
+                    
+                    // Update system stats
+                    document.getElementById('total-requests').textContent = data.traffic_monitor.total_requests;
+                    document.getElementById('active-ips').textContent = data.traffic_monitor.active_ips;
+                    document.getElementById('blocked-ips').textContent = data.rate_limiter.blocked_ips;
+                    document.getElementById('suspicious-ips').textContent = data.traffic_monitor.suspicious_ips_count;
+                    
+                    // Update rate limiter stats
+                    document.getElementById('max-requests').textContent = data.rate_limiter.max_requests;
+                    document.getElementById('time-window').textContent = data.rate_limiter.time_window;
+                    document.getElementById('rate-blocked').textContent = data.rate_limiter.blocked_ips;
+                    
+                    // Update alerts
+                    updateAlerts(data.traffic_monitor.recent_alerts);
+                    
+                    // Update blocked IPs
+                    updateBlockedIPs(data.rate_limiter.blocked_ip_list, data.ip_filter.temp_blocks);
+                    
+                    // Update suspicious IPs
+                    updateSuspiciousIPs(data.traffic_monitor.suspicious_ips);
+                    
+                    // Update refresh indicator
+                    document.getElementById('refresh-indicator').style.color = '#28a745';
+                    setTimeout(() => {
+                        document.getElementById('refresh-indicator').style.color = '#666';
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        function updateAlerts(alerts) {
+            const container = document.getElementById('alerts-container');
+            
+            if (!alerts || alerts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No alerts</p>';
+                return;
+            }
+            
+            container.innerHTML = alerts.reverse().map(alert => {
+                const time = new Date(alert.timestamp * 1000).toLocaleString();
+                const severityClass = alert.severity.toLowerCase();
+                return `
+                    <div class="alert-item ${severityClass}">
+                        <div class="alert-time">${time}</div>
+                        <div class="alert-details">
+                            <strong>${alert.ip}</strong> - Rate: ${alert.request_rate} req/s<br>
+                            Severity: <strong>${alert.severity}</strong> | Violations: ${alert.violation_count}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateBlockedIPs(rateBlocked, tempBlocks) {
+            const container = document.getElementById('blocked-ips-list');
+            const allBlocked = {...rateBlocked, ...tempBlocks};
+            
+            if (Object.keys(allBlocked).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No blocked IPs</p>';
+                return;
+            }
+            
+            container.innerHTML = Object.entries(allBlocked).map(([ip, remaining]) => `
+                <div class="ip-item">
+                    <span><span class="status-indicator status-danger"></span>${ip} (${remaining}s)</span>
+                    <button class="btn btn-success" onclick="unblockIPDirect('${ip}')">Unblock</button>
+                </div>
+            `).join('');
+        }
+
+        function updateSuspiciousIPs(suspiciousIPs) {
+            const container = document.getElementById('suspicious-ips-list');
+            
+            if (!suspiciousIPs || suspiciousIPs.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No suspicious activity</p>';
+                return;
+            }
+            
+            container.innerHTML = suspiciousIPs.map(ip => `
+                <div class="ip-item">
+                    <span>
+                        <span class="status-indicator status-warning"></span>
+                        ${ip.ip} - ${ip.request_rate} req/s (${ip.violations} violations)
+                    </span>
+                    <button class="btn btn-danger" onclick="blockIPDirect('${ip.ip}')">Block</button>
+                </div>
+            `).join('');
+        }
+
+        async function blockIP() {
+            const ip = document.getElementById('control-ip').value;
+            const duration = document.getElementById('control-duration').value;
+            
+            if (!ip) {
+                alert('Please enter an IP address');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/block', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip, duration: duration ? parseInt(duration) : null})
+                });
+                
+                const result = await response.json();
+                alert(result.message || result.error);
+                updateDashboard();
+            } catch (error) {
+                alert('Error blocking IP: ' + error.message);
+            }
+        }
+
+        async function unblockIP() {
+            const ip = document.getElementById('control-ip').value;
+            
+            if (!ip) {
+                alert('Please enter an IP address');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/unblock', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip})
+                });
+                
+                const result = await response.json();
+                alert(result.message || result.error);
+                updateDashboard();
+            } catch (error) {
+                alert('Error unblocking IP: ' + error.message);
+            }
+        }
+
+        async function whitelistIP() {
+            const ip = document.getElementById('control-ip').value;
+            
+            if (!ip) {
+                alert('Please enter an IP address');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/whitelist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip})
+                });
+                
+                const result = await response.json();
+                alert(result.message || result.error);
+                updateDashboard();
+            } catch (error) {
+                alert('Error whitelisting IP: ' + error.message);
+            }
+        }
+
+        async function blockIPDirect(ip) {
+            try {
+                const response = await fetch('/api/block', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip, duration: 300})
+                });
+                
+                const result = await response.json();
+                alert(result.message || result.error);
+                updateDashboard();
+            } catch (error) {
+                alert('Error blocking IP: ' + error.message);
+            }
+        }
+
+        async function unblockIPDirect(ip) {
+            try {
+                const response = await fetch('/api/unblock', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip})
+                });
+                
+                const result = await response.json();
+                updateDashboard();
+            } catch (error) {
+                alert('Error unblocking IP: ' + error.message);
+            }
+        }
+
+        async function testRequest() {
+            const ip = document.getElementById('test-ip').value;
+            
+            if (!ip) {
+                alert('Please enter a test IP');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/test', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ip})
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('test-result');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="stat-box" style="background: ${result.allowed ? '#d4edda' : '#f8d7da'};">
+                            <strong>${result.allowed ? '✓ Allowed' : '✗ Blocked'}</strong><br>
+                            ${result.reason}
+                        </div>
+                    `;
+                    updateDashboard();
+                }
+            } catch (error) {
+                alert('Error testing request: ' + error.message);
+            }
+        }
+
+        // Initialize dashboard
+        updateDashboard();
+        refreshInterval = setInterval(updateDashboard, 2000);
+    </script>
+</body>
+</html>

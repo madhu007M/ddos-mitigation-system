@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  ddos-mitigation:
+    build: .
+    container_name: ddos-mitigation-system
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+      - ./config.yaml:/app/config.yaml
+    environment:
+      - FLASK_ENV=production
+    restart: unless-stopped
+    networks:
+      - ddos-network
+
+  # Optional: Redis for distributed rate limiting
+  redis:
+    image: redis:7-alpine
+    container_name: ddos-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - ddos-network
+
+networks:
+  ddos-network:
+    driver: bridge
+
+volumes:
+  redis-data:
