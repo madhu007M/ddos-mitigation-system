@@ -1,0 +1,54 @@
+# DDoS Mitigation System Configuration
+
+# Rate Limiting Settings
+rate_limiting:
+  enabled: true
+  # Maximum requests per IP per time window
+  max_requests_per_window: 100
+  # Time window in seconds
+  time_window: 60
+  # Block duration in seconds for offenders
+  block_duration: 300
+
+# Traffic Monitoring
+monitoring:
+  enabled: true
+  # Threshold for suspicious activity (requests per second)
+  suspicious_threshold: 10
+  # Detection window in seconds
+  detection_window: 10
+  # Alert threshold (how many violations before blocking)
+  alert_threshold: 3
+
+# IP Blocking
+ip_blocking:
+  enabled: true
+  # Whitelist IPs (never block)
+  whitelist:
+    - "127.0.0.1"
+    - "::1"
+  # Blacklist IPs (always block)
+  blacklist: []
+  # Auto-block on detection
+  auto_block: true
+
+# Logging
+logging:
+  level: "INFO"
+  file: "logs/ddos_mitigation.log"
+  max_size: 10485760  # 10MB
+  backup_count: 5
+
+# Dashboard
+dashboard:
+  enabled: true
+  port: 5000
+  host: "0.0.0.0"
+  debug: false
+
+# Redis (for distributed rate limiting)
+redis:
+  enabled: false
+  host: "localhost"
+  port: 6379
+  db: 0
